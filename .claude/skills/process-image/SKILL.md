@@ -1,8 +1,8 @@
 ---
 name: process-image
-description: Apply image processing to a file using imagecli. Use when the user asks to edit, adjust, or transform an image (blur, sharpen, resize, color grade, curves, vignette, etc.), or to emulate a film stock look.
+description: Apply image processing to a file using imagecli, or preview/display an image. Use when the user asks to edit, adjust, transform, view, check, or verify an image (blur, sharpen, resize, color grade, curves, vignette, etc.), or to emulate a film stock look.
 argument-hint: <input-file> [description of desired look]
-allowed-tools: Bash(cargo run *), Bash(cargo build *), Read
+allowed-tools: Bash(cargo run *), Bash(cargo build *), Read, Write, Glob
 ---
 
 # Process Image
@@ -64,6 +64,63 @@ Only the first command in the pipe uses `-i`, only the last uses `-o`. Intermedi
 - **Vintage/faded**: `curve --darks=20 --highlights=-10` piped with warm color and vignette
 - **High contrast B&W**: `grayscale` piped with `curve --darks=-15 --highlights=15`
 - **Warm golden hour**: `color --temperature=40 --vibrance=20`
+
+## Previewing an image
+
+When the user asks to view, check, or verify an image:
+
+1. If the image is larger than 512px on its longest side, create a temporary thumbnail:
+   ```bash
+   cargo run --release -- -i <file> resize -s 512 -o /tmp/preview_thumb.png
+   ```
+   Then read `/tmp/preview_thumb.png`.
+
+2. If the image is small enough (512px or less), read it directly.
+
+3. Describe what you see: subject, colors, exposure, any notable qualities.
+
+## Presets
+
+Presets let users save and reuse processing pipelines. They are stored as JSON files in the `presets/` directory at the project root.
+
+### Saving a preset
+
+When the user likes a result and wants to save it (e.g., "save this as a preset", "remember this look"), or when you finish a film stock emulation:
+
+1. Ask for a preset name if the user didn't provide one.
+2. Write a JSON file to `presets/<name>.json` with this structure:
+
+```json
+{
+  "name": "Vintage 70s",
+  "description": "Faded warm look with lifted blacks and vignette",
+  "pipeline": [
+    { "command": "curve", "args": { "darks": 35, "highlights": -20 } },
+    { "command": "color", "args": { "temperature": 30, "saturation": -15 } },
+    { "command": "color-grade", "args": { "shadows-hue": 30, "shadows-sat": 30, "highlights-hue": 45, "highlights-sat": 20 } },
+    { "command": "vignette", "args": { "amount": -70 } }
+  ]
+}
+```
+
+Rules:
+- `pipeline` is an ordered array of steps, executed left-to-right via pipes.
+- Each step has `command` (the imagecli subcommand name) and `args` (an object of only the non-default arguments).
+- Omit arguments that are left at their default value.
+
+### Applying a preset
+
+When the user asks to apply a preset (e.g., "apply the vintage preset", "use my portra look"):
+
+1. Read `presets/<name>.json`.
+2. Convert the `pipeline` array into a piped `cargo run --release --` command chain:
+   - First step gets `-i <input>`, last step gets `-o <output>`.
+   - Each `args` object is expanded to `--key=value` flags.
+3. Execute and verify as usual.
+
+### Listing presets
+
+When the user asks to list or see available presets, glob `presets/*.json` and display each preset's name and description.
 
 ## Output naming
 
