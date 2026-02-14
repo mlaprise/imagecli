@@ -102,6 +102,58 @@ enum Command {
         highlights: i32,
     },
 
+    /// Adjust color: temperature, tint, vibrance, saturation
+    Color {
+        /// White balance: -100 (cool/blue) to 100 (warm/orange)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        temperature: i32,
+
+        /// Green-magenta axis: -100 (green) to 100 (magenta)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        tint: i32,
+
+        /// Smart saturation for muted colors: -100 to 100
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        vibrance: i32,
+
+        /// Linear saturation: -100 (grayscale) to 100 (oversaturated)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        saturation: i32,
+    },
+
+    /// Color grading: tint shadows, midtones, and highlights independently
+    ColorGrade {
+        /// Shadows hue (0–360 degrees on color wheel)
+        #[arg(long, default_value_t = 0)]
+        shadows_hue: u32,
+        /// Shadows saturation (0–100, distance from center)
+        #[arg(long, default_value_t = 0)]
+        shadows_sat: u32,
+        /// Shadows luminance shift (-100 to +100)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        shadows_lum: i32,
+
+        /// Midtones hue (0–360 degrees on color wheel)
+        #[arg(long, default_value_t = 0)]
+        midtones_hue: u32,
+        /// Midtones saturation (0–100, distance from center)
+        #[arg(long, default_value_t = 0)]
+        midtones_sat: u32,
+        /// Midtones luminance shift (-100 to +100)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        midtones_lum: i32,
+
+        /// Highlights hue (0–360 degrees on color wheel)
+        #[arg(long, default_value_t = 0)]
+        highlights_hue: u32,
+        /// Highlights saturation (0–100, distance from center)
+        #[arg(long, default_value_t = 0)]
+        highlights_sat: u32,
+        /// Highlights luminance shift (-100 to +100)
+        #[arg(long, default_value_t = 0, allow_hyphen_values = true)]
+        highlights_lum: i32,
+    },
+
     /// Apply a Lightroom-style vignette effect
     Vignette {
         /// Vignette strength: -100 (darken edges) to 100 (lighten edges)
@@ -238,6 +290,19 @@ fn build_curve_lut(xs: &[f64], ys: &[f64]) -> [u8; 256] {
     lut
 }
 
+fn hue_to_rgb(hue: f64) -> (f64, f64, f64) {
+    let h = (hue % 360.0) / 60.0;
+    let x = 1.0 - ((h % 2.0) - 1.0).abs();
+    match h as u32 {
+        0 => (1.0, x, 0.0),
+        1 => (x, 1.0, 0.0),
+        2 => (0.0, 1.0, x),
+        3 => (0.0, x, 1.0),
+        4 => (x, 0.0, 1.0),
+        _ => (1.0, 0.0, x),
+    }
+}
+
 fn smoothstep(edge0: f64, edge1: f64, x: f64) -> f64 {
     let t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
     t * t * (3.0 - 2.0 * t)
@@ -354,6 +419,60 @@ fn main() {
             }
             DynamicImage::ImageRgb8(rgb)
         }
+        Command::ColorGrade {
+            shadows_hue, shadows_sat, shadows_lum,
+            midtones_hue, midtones_sat, midtones_lum,
+            highlights_hue, highlights_sat, highlights_lum,
+        } => {
+            let s_sat = shadows_sat.min(100) as f64 / 100.0;
+            let m_sat = midtones_sat.min(100) as f64 / 100.0;
+            let h_sat = highlights_sat.min(100) as f64 / 100.0;
+            let s_lum = shadows_lum.clamp(-100, 100) as f64 / 100.0;
+            let m_lum = midtones_lum.clamp(-100, 100) as f64 / 100.0;
+            let h_lum = highlights_lum.clamp(-100, 100) as f64 / 100.0;
+
+            let s_tint = hue_to_rgb(shadows_hue as f64);
+            let m_tint = hue_to_rgb(midtones_hue as f64);
+            let h_tint = hue_to_rgb(highlights_hue as f64);
+
+            // Precompute tint offset directions (signed, -1 to +1 per channel)
+            let s_off = ((s_tint.0 - 0.5) * 2.0, (s_tint.1 - 0.5) * 2.0, (s_tint.2 - 0.5) * 2.0);
+            let m_off = ((m_tint.0 - 0.5) * 2.0, (m_tint.1 - 0.5) * 2.0, (m_tint.2 - 0.5) * 2.0);
+            let h_off = ((h_tint.0 - 0.5) * 2.0, (h_tint.1 - 0.5) * 2.0, (h_tint.2 - 0.5) * 2.0);
+
+            let mut rgb = img.to_rgb8();
+            for pixel in rgb.pixels_mut() {
+                let r = pixel[0] as f64;
+                let g = pixel[1] as f64;
+                let b = pixel[2] as f64;
+                let lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0;
+
+                let shadows_w = 1.0 - smoothstep(0.0, 0.5, lum);
+                let highlights_w = smoothstep(0.5, 1.0, lum);
+                let midtones_w = 1.0 - shadows_w - highlights_w;
+
+                // Additive color tint from all three ranges
+                let cr = s_off.0 * shadows_w * s_sat * 80.0
+                       + m_off.0 * midtones_w * m_sat * 80.0
+                       + h_off.0 * highlights_w * h_sat * 80.0;
+                let cg = s_off.1 * shadows_w * s_sat * 80.0
+                       + m_off.1 * midtones_w * m_sat * 80.0
+                       + h_off.1 * highlights_w * h_sat * 80.0;
+                let cb = s_off.2 * shadows_w * s_sat * 80.0
+                       + m_off.2 * midtones_w * m_sat * 80.0
+                       + h_off.2 * highlights_w * h_sat * 80.0;
+
+                // Multiplicative luminance shift
+                let lum_factor = (1.0 + s_lum * shadows_w * 0.5)
+                               * (1.0 + m_lum * midtones_w * 0.5)
+                               * (1.0 + h_lum * highlights_w * 0.5);
+
+                pixel[0] = ((r + cr) * lum_factor).round().clamp(0.0, 255.0) as u8;
+                pixel[1] = ((g + cg) * lum_factor).round().clamp(0.0, 255.0) as u8;
+                pixel[2] = ((b + cb) * lum_factor).round().clamp(0.0, 255.0) as u8;
+            }
+            DynamicImage::ImageRgb8(rgb)
+        }
         Command::Vignette { amount, midpoint, roundness, feather } => {
             let amount = amount.clamp(-100, 100);
             let midpoint = midpoint.clamp(0, 100);
@@ -396,6 +515,41 @@ fn main() {
                         pixel[c] = new_v.round().clamp(0.0, 255.0) as u8;
                     }
                 }
+            }
+            DynamicImage::ImageRgb8(rgb)
+        }
+        Command::Color { temperature, tint, vibrance, saturation } => {
+            let temperature = temperature.clamp(-100, 100) as f64;
+            let tint = tint.clamp(-100, 100) as f64;
+            let vibrance = vibrance.clamp(-100, 100) as f64 / 100.0;
+            let saturation = saturation.clamp(-100, 100) as f64 / 100.0;
+
+            // Per-channel multipliers for temperature + tint
+            let r_scale = 1.0 + (temperature * 0.15 + tint * 0.05) / 100.0;
+            let g_scale = 1.0 + (temperature * 0.05 - tint * 0.15) / 100.0;
+            let b_scale = 1.0 - (temperature * 0.15 - tint * 0.05) / 100.0;
+
+            let mut rgb = img.to_rgb8();
+            for pixel in rgb.pixels_mut() {
+                // Apply temperature + tint
+                let r = (pixel[0] as f64 * r_scale).clamp(0.0, 255.0);
+                let g = (pixel[1] as f64 * g_scale).clamp(0.0, 255.0);
+                let b = (pixel[2] as f64 * b_scale).clamp(0.0, 255.0);
+
+                // Luminance (Rec. 709)
+                let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // Pixel saturation for vibrance weighting
+                let max_ch = r.max(g).max(b);
+                let min_ch = r.min(g).min(b);
+                let pixel_sat = if max_ch > 0.0 { (max_ch - min_ch) / max_ch } else { 0.0 };
+
+                // Combined factor: linear saturation * vibrance (inversely weighted by existing saturation)
+                let factor = (1.0 + saturation) * (1.0 + vibrance * (1.0 - pixel_sat));
+
+                pixel[0] = (lum + factor * (r - lum)).round().clamp(0.0, 255.0) as u8;
+                pixel[1] = (lum + factor * (g - lum)).round().clamp(0.0, 255.0) as u8;
+                pixel[2] = (lum + factor * (b - lum)).round().clamp(0.0, 255.0) as u8;
             }
             DynamicImage::ImageRgb8(rgb)
         }

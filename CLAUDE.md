@@ -27,6 +27,8 @@ cargo build --release
 | `resize` | `--output-size` / `-s` (u32, required) | Resize longest side to target; no-op if image is already smaller |
 | `channel` | `red`/`green`/`blue` (positional) | Extract a single RGB channel as grayscale |
 | `curve` | `--darks`, `--middarks`, `--mids`, `--midhighlights`, `--highlights` (i32, default 0 each) | Tone curve via 5-point cubic spline on a 0–100 scale; each arg shifts the control point up/down from identity |
+| `color` | `--temperature` (i32, default 0), `--tint` (i32, default 0), `--vibrance` (i32, default 0), `--saturation` (i32, default 0) | Color adjustment; temperature: -100 cool/blue to 100 warm/amber; tint: -100 green to 100 magenta; vibrance: smart saturation preferring muted colors; saturation: linear -100 grayscale to 100 oversaturated |
+| `color-grade` | `--shadows-hue` (u32, default 0), `--shadows-sat` (u32, default 0), `--shadows-lum` (i32, default 0), `--midtones-hue` (u32, default 0), `--midtones-sat` (u32, default 0), `--midtones-lum` (i32, default 0), `--highlights-hue` (u32, default 0), `--highlights-sat` (u32, default 0), `--highlights-lum` (i32, default 0) | Tint shadows/midtones/highlights independently; hue: 0–360 (color wheel); sat: 0–100 (tint strength); lum: -100 to +100 (brightness shift per range) |
 | `vignette` | `--amount` / `-a` (i32, default -50), `--midpoint` / `-m` (u32, default 50), `--roundness` / `-r` (i32, default 0), `--feather` / `-f` (u32, default 50) | Lightroom-style vignette; amount: -100 darken to 100 lighten; midpoint: 0–100; roundness: -100 rect to 100 circle; feather: 0–100 |
 | `show-curve` | same args as `curve` | Debug: renders a 256x256 plot of the tone curve (no input image needed); shows grid, identity diagonal, spline curve, and control points |
 
@@ -54,6 +56,24 @@ imagecli -i input.png -o output.png vignette
 # Rectangular light vignette, tight midpoint
 imagecli -i input.png -o output.png vignette --amount 50 --midpoint 30 --roundness -80
 
+# Warm color shift
+imagecli -i input.png -o output.png color --temperature=40
+
+# Desaturate with cool tint
+imagecli -i input.png -o output.png color --saturation=-30 --temperature=-20
+
+# Vibrance boost (preserves already-saturated colors)
+imagecli -i input.png -o output.png color --vibrance=60
+
+# Warm shadows only
+imagecli -i input.png -o output.png color-grade --shadows-hue=30 --shadows-sat=60
+
+# Teal shadows + orange highlights (classic cinematic look)
+imagecli -i input.png -o output.png color-grade --shadows-hue=200 --shadows-sat=50 --highlights-hue=30 --highlights-sat=40
+
+# Vintage 70s look: faded curve + warm color + color grading + vignette
+imagecli -i input.png curve --darks=35 --highlights=-20 | imagecli color --temperature=30 --saturation=-15 | imagecli color-grade --shadows-hue=30 --shadows-sat=30 --highlights-hue=45 --highlights-sat=20 | imagecli vignette --amount -70 -o output.png
+
 # Piped chain: vignette then contrast curve
 imagecli -i input.png vignette | imagecli curve --darks=-10 --highlights=10 -o output.png
 
@@ -66,6 +86,10 @@ imagecli -o plot.png show-curve --darks=-30 --middarks=-15 --midhighlights=15 --
 1. Add a variant to the `Command` enum with its args
 2. Add the processing logic in the `match cli.command` block in `main()`
 3. The function must return a `DynamicImage`
+
+## Verifying result
+
+If the user ask to verify the result, generate a small thumbnail (512x512) and analyse it.
 
 ## Test image
 
