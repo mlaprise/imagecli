@@ -83,6 +83,15 @@ cat input.png | imagecli blur --sigma 2 | imagecli grayscale > output.png
 imagecli -i photo.jpg resize -s 1024 | imagecli color --temperature=20 -o result.jpg
 ```
 
+### Film Emulation
+
+You can tap into Claude builting knownledge of film caracteristic and convert this easily into a processing pipeline.
+
+Example:
+
+
+
+
 ## License
 
 MIT
