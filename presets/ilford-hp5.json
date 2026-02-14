@@ -1,0 +1,8 @@
+{
+  "name": "Ilford HP5",
+  "description": "Classic Ilford HP5 Plus 400 B&W emulation — punchy midtone contrast, slightly lifted blacks, gentle highlight rolloff",
+  "pipeline": [
+    { "command": "grayscale", "args": {} },
+    { "command": "curve", "args": { "darks": 8, "middarks": -8, "midhighlights": 10, "highlights": -5 } }
+  ]
+}
