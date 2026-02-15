@@ -1,0 +1,11 @@
+{
+  "name": "Kodak Portra 400",
+  "description": "Classic portrait film: warm muted tones, lifted blacks, soft highlight rolloff, fine organic grain",
+  "pipeline": [
+    { "command": "curve", "args": { "darks": 12, "middarks": 5, "highlights": -8 } },
+    { "command": "color", "args": { "temperature": 15, "saturation": -12, "vibrance": 10 } },
+    { "command": "color-grade", "args": { "shadows-hue": 30, "shadows-sat": 20, "highlights-hue": 40, "highlights-sat": 15 } },
+    { "command": "grain", "args": { "amount": 20, "size": 30, "roughness": 40 } },
+    { "command": "vignette", "args": { "amount": -20, "midpoint": 60, "feather": 70 } }
+  ]
+}

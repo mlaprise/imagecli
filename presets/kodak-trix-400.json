@@ -1,0 +1,11 @@
+{
+  "name": "Kodak Tri-X 400",
+  "description": "Classic high-contrast B&W photojournalism film: deep blacks, gritty silver halide grain, subtle warm print tone",
+  "pipeline": [
+    { "command": "grayscale", "args": {} },
+    { "command": "curve", "args": { "darks": -18, "middarks": -8, "midhighlights": 10, "highlights": 15 } },
+    { "command": "color-grade", "args": { "midtones-hue": 35, "midtones-sat": 8 } },
+    { "command": "grain", "args": { "amount": 45, "size": 15, "roughness": 80, "monochrome": true } },
+    { "command": "vignette", "args": { "amount": -30, "midpoint": 55, "feather": 60 } }
+  ]
+}

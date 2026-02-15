@@ -162,6 +162,25 @@ enum Command {
     /// Decode a camera RAW file (CR3, NEF, ARW, etc.)
     DecodeRaw,
 
+    /// Simulate photographic film grain
+    Grain {
+        /// Grain intensity (0–100)
+        #[arg(short, long, default_value_t = 25)]
+        amount: u32,
+
+        /// Particle size: 0 (fine) to 100 (coarse)
+        #[arg(short, long, default_value_t = 25)]
+        size: u32,
+
+        /// Texture: 0 (smooth dye clouds) to 100 (sharp silver halide)
+        #[arg(short, long, default_value_t = 50)]
+        roughness: u32,
+
+        /// Use identical noise for all channels (B&W film grain)
+        #[arg(short = 'M', long, default_value_t = false)]
+        monochrome: bool,
+    },
+
     /// Apply a Lightroom-style vignette effect
     Vignette {
         /// Vignette strength: -100 (darken edges) to 100 (lighten edges)
@@ -260,6 +279,9 @@ fn main() {
                 midtones_hue, midtones_sat, midtones_lum,
                 highlights_hue, highlights_sat, highlights_lum,
             )
+        }
+        Command::Grain { amount, size, roughness, monochrome } => {
+            commands::grain::apply(img, amount, size, roughness, monochrome)
         }
         Command::Vignette { amount, midpoint, roundness, feather } => {
             commands::vignette::apply(img, amount, midpoint, roundness, feather)

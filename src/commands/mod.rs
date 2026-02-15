@@ -4,6 +4,7 @@ pub mod color;
 pub mod color_grade;
 pub mod curve;
 pub mod decode_raw;
+pub mod grain;
 pub mod grayscale;
 pub mod resize;
 pub mod show_curve;
