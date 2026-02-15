@@ -159,6 +159,9 @@ enum Command {
         highlights_lum: i32,
     },
 
+    /// Decode a camera RAW file (CR3, NEF, ARW, etc.)
+    DecodeRaw,
+
     /// Apply a Lightroom-style vignette effect
     Vignette {
         /// Vignette strength: -100 (darken edges) to 100 (lighten edges)
@@ -224,6 +227,14 @@ fn main() {
         return;
     }
 
+    // decode-raw reads the RAW file directly via -i, bypassing normal image loading
+    if let Command::DecodeRaw = &cli.command {
+        let path = cli.input.as_ref().expect("decode-raw requires -i <file>");
+        let result = commands::decode_raw::apply(path);
+        save_image(&result, cli.output.as_ref());
+        return;
+    }
+
     let img = load_image(cli.input.as_ref());
 
     let result = match cli.command {
@@ -253,7 +264,7 @@ fn main() {
         Command::Vignette { amount, midpoint, roundness, feather } => {
             commands::vignette::apply(img, amount, midpoint, roundness, feather)
         }
-        Command::ShowCurve { .. } => unreachable!(),
+        Command::ShowCurve { .. } | Command::DecodeRaw => unreachable!(),
     };
 
     save_image(&result, cli.output.as_ref());

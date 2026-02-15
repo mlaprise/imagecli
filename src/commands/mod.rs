@@ -3,6 +3,7 @@ pub mod channel;
 pub mod color;
 pub mod color_grade;
 pub mod curve;
+pub mod decode_raw;
 pub mod grayscale;
 pub mod resize;
 pub mod show_curve;
