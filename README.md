@@ -90,16 +90,20 @@ https://github.com/user-attachments/assets/bc833bbb-569b-4736-91f6-ce398e29bb47
 
 ## FAQ
 
-**Why use pipes instead of combining all ops in one command?**  
+**Why use pipes instead of combining all ops in one command?**
+
 Pipes keep each step independent and composable. Agents (and humans) can mix and match freely without learning a monolithic DSL.
 
 **What format does stdin/stdout use?**  
+
 PNG. Use `-i` and `-o` for other formats (JPEG, etc.).
 
 **How do I see all options for a command?**  
+
 Run `imagecli <command> --help` (e.g. `imagecli curve --help`).
 
 **Why your code sucks?**
+
 It's a pet project vibe-coded using Claude. I'm not a Rust programmer, so I wouldn't call the style "elegant". The performance is also not optimized at all (yet).
 
 ## License
