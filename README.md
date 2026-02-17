@@ -63,8 +63,6 @@ imagecli is built to be called by AI agents that need image processing capabilit
 This project includes ready-made [Claude Code Skills](https://docs.anthropic.com/en/docs/claude-code/skills) in `.claude/skills/`:
 
 - **`process-image`** — Claude automatically translates natural language requests ("make it warmer", "add a cinematic look") into imagecli commands, runs them, and verifies the result
-- **`add-command`** — Scaffolds a new image processing subcommand (`/add-command`)
-- **`preview`** — Quick visual inspection of an image file
 
 To use them, open this project in Claude Code and ask it to process an image. The skills are picked up automatically.
 
