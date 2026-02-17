@@ -2,6 +2,12 @@
 
 A single-binary Rust CLI for image processing. Operations are composable via unix pipes.
 
+<video controls width="100%">
+    <source src="https://github.com/user-attachments/assets/bc833bbb-569b-4736-91f6-ce398e29bb47" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+
 ## Build
 
 ```bash
@@ -107,3 +113,79 @@ If the user ask to verify the result, generate a small thumbnail (512x512) and a
 ## Test image
 
 `lena.png` — 512x512 RGB PNG used for testing.
+
+## Agentic Workflow.
+
+Imagecli has been build specifically for "agentic workflow". For example, one can ask to Claude Code:
+
+```console
+Describe me the style of the photographer William Eugene Smith, then convert "sample.jpg" in this style
+```
+
+Output:
+
+```console
+William Eugene Smith — Photographic Style
+
+  W. Eugene Smith (1918–1978) was one of the most influential American photojournalists. His style is characterized by:
+
+  - High-contrast black & white: Deep, rich blacks and luminous highlights with a dramatic tonal range
+  - Dark, moody shadows: He often let shadows go very deep, creating a sense of weight and gravitas
+  - Subtle grain: His prints have the organic texture of mid-century silver gelatin film
+  - Vignetting: Natural darkening at edges, drawing the eye to the subject
+  - Slightly lifted blacks: In some prints, the deepest shadows have a slight matte/lifted quality rather than pure black
+  - Warm-neutral tone: His prints often carried a subtle warmth in the midtones
+
+  Let me apply this look to your image.
+
+⏺ Skill(process-image)
+  ⎿  Successfully loaded skill · 5 tools allowed
+
+⏺ Here's my mapping of Smith's characteristics to imagecli commands:
+
+  ┌─────────────────────────────┬─────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────────────────┐
+  │       Characteristic        │                             Command                             │                               Reasoning                                │
+  ├─────────────────────────────┼─────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+  │ B&W conversion              │ grayscale                                                       │ Foundation of his work                                                 │
+  ├─────────────────────────────┼─────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+  │ High contrast, lifted       │ curve --darks=12 --middarks=-8 --midhighlights=10               │ S-curve for drama, but darks lifted slightly for that matte print      │
+  │ blacks                      │ --highlights=15                                                 │ quality                                                                │
+  ├─────────────────────────────┼─────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+  │ Warm-neutral print tone     │ color-grade --midtones-hue=35 --midtones-sat=15                 │ Subtle sepia-ish warmth of silver gelatin prints                       │
+  ├─────────────────────────────┼─────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+  │ Dark vignette               │ vignette --amount=-60 --midpoint=40 --feather=60                │ Draws the eye inward, classic darkroom technique                       │
+  ├─────────────────────────────┼─────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+  │ Silver halide grain         │ grain --amount=45 --size=15 --roughness=80 --monochrome         │ Fine, sharp monochrome grain typical of Tri-X era                      │
+  └─────────────────────────────┴─────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────────┘
+
+  Let me build and run the pipeline.
+
+⏺ Bash(cargo run --release -- -i sample.jpg grayscale | cargo run --release -- curve --darks=12 --middarks=-8 --midhighlights=10 --highlights=15 | cargo run --release…)
+  ⎿      Blocking waiting for file lock on package cache
+         Blocking waiting for file lock on package cache
+         Blocking waiting for file lock on package cache
+     … +30 lines (ctrl+o to expand)
+
+⏺ Now let me create a preview and verify the result.
+
+⏺ Bash(cargo run --release -- -i sample_smith.jpg resize -s 512 -o /tmp/smith_preview.png)
+  ⎿      Finished `release` profile [optimized] target(s) in 0.07s
+          Running `target/release/imagecli -i sample_smith.jpg resize -s 512 -o /tmp/smith_preview.png`
+
+⏺ Read 1 file (ctrl+o to expand)
+
+⏺ The result looks great and captures the W. Eugene Smith aesthetic well:
+
+  - Deep, moody shadows — the room's dark areas have real weight, but aren't crushed to pure black (slightly lifted)
+  - Luminous highlights — the doorway light glows with that signature backlit quality Smith was known for
+  - Visible silver halide grain — organic, fine-grained texture across the image, especially noticeable in the midtones
+  - Dark vignette — edges fall off naturally, pulling the eye toward the figure in the doorway
+  - Warm-neutral tone — subtle warmth reminiscent of a silver gelatin darkroom print, not a cold digital B&W
+
+  Saved to sample_smith.jpg.
+  ```
+
+  ## Third-party agent
+
+  Claude Code work quite well, but we can perfectly uses any other open source terminal agent. I'm a big fan of the minimalist approach of Pi (https://pi.dev). The includes the skill should be compatible with Pi Agent Skills standard.
+
