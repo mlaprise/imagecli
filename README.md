@@ -11,11 +11,6 @@ AI agents (like Claude Code) can process images, but they need simple, predictab
 - **Deterministic args** — every parameter is a named flag with sensible defaults
 - **stdin/stdout by default** — pipes use PNG format, so agents don't need to manage intermediate files
 
-<video controls width="100%">
-    <source src="https://github.com/user-attachments/assets/bc833bbb-569b-4736-91f6-ce398e29bb47" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
-
 ## Install
 
 ```bash
@@ -92,10 +87,7 @@ imagecli -i photo.jpg resize -s 1024 | imagecli color --temperature=20 -o result
 
 You can tap into Claude builting knownledge of film caracteristic and convert this easily into a processing pipeline.
 
-Example:
-
-
-
+https://github.com/user-attachments/assets/bc833bbb-569b-4736-91f6-ce398e29bb47
 
 ## License
 
