@@ -204,5 +204,5 @@ William Eugene Smith — Photographic Style
 
   ## Third-party agent
 
-  Claude Code work quite well, but we can perfectly uses any other open source terminal agent. I'm a big fan of the minimalist approach of Pi (https://pi.dev). The includes the skill should be compatible with Pi Agent Skills standard.
+  Claude Code work quite well, but we can perfectly uses any other open source terminal agent. I'm a big fan of the minimalist approach of Pi (https://pi.dev). The included skill should be compatible with Pi Agent Skills standard.
 
