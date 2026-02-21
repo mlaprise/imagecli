@@ -181,6 +181,13 @@ enum Command {
         monochrome: bool,
     },
 
+    /// Adjust micro-contrast / structure (similar to Lightroom Clarity)
+    Structure {
+        /// Structure amount: -100 (smooth) to 100 (enhance detail)
+        #[arg(short, long, default_value_t = 25, allow_hyphen_values = true)]
+        amount: i32,
+    },
+
     /// Apply a Lightroom-style vignette effect
     Vignette {
         /// Vignette strength: -100 (darken edges) to 100 (lighten edges)
@@ -283,6 +290,7 @@ fn main() {
         Command::Grain { amount, size, roughness, monochrome } => {
             commands::grain::apply(img, amount, size, roughness, monochrome)
         }
+        Command::Structure { amount } => commands::structure::apply(img, amount),
         Command::Vignette { amount, midpoint, roundness, feather } => {
             commands::vignette::apply(img, amount, midpoint, roundness, feather)
         }

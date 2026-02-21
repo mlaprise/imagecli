@@ -8,5 +8,6 @@ pub mod grain;
 pub mod grayscale;
 pub mod resize;
 pub mod show_curve;
+pub mod structure;
 pub mod unsharpen;
 pub mod vignette;
